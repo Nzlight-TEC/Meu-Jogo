@@ -489,7 +489,7 @@ function spawnEnemy() {
   const list = platforms.getChildren().slice(); // cópia
   if (list.length <= 1) {
     // fallback: spawn sem plataforma definida
-    const e = enemies.create(player.x + 500, 520, "enemy");
+    const e = enemies.create(player.x + 500, 120, "enemy");
     eInit(e);
     return;
   }
