@@ -13,7 +13,7 @@ let enemies;
 let platforms;
 let particles;
 let score = 0;
-let lives = 3;
+let lives = 5;
 let hudScore, hudLives;
 let spawnTimer = 0;
 let gameOver = false;
@@ -21,6 +21,7 @@ let reticulo;
 let lastFired = 0;
 let lastHeavyFired = 0;
 let lastDash = 0;
+let finalizado = false;
 
 const DASH_COOLDOWN = 800;
 const DASH_SPEED = 700;
@@ -76,6 +77,11 @@ const config = {
     },
   },
   scene: { preload, create, update },
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+},
+
 };
 
 function preload() {
@@ -145,6 +151,20 @@ function preload() {
     pixelWidth: 4,
     pixelHeight: 4,
   });
+
+  // moeda
+this.textures.generate("coin", {
+  data: [
+    "  777  ",
+    " 77777 ",
+    "7777777",
+    "7777777",
+    " 77777 ",
+    "  777  "
+  ],
+  pixelWidth: 2,
+  pixelHeight: 2,
+});
 
   // partículas e mira
   this.textures.generate("p", { data: ["5"], pixelWidth: 2, pixelHeight: 2 });
@@ -228,12 +248,26 @@ function create() {
     color: "#fff",
   }).setScrollFactor(0);
 
-  hudLives = this.add.text(16, 50, "LIVES: 3", {
+  hudLives = this.add.text(16, 50, "LIVES: 5", {
     fontFamily: "monospace",
     fontSize: "26px",
     color: "#ffbbbb",
   }).setScrollFactor(0);
+  let placa = this.add.rectangle(WIDTH - 150, 80, 260, 90, 0x000000, 0.55)
+  .setStrokeStyle(2, 0xffffff)
+  .setScrollFactor(0)
+  .setDepth(20);
 
+let textoPlaca = this.add.text(WIDTH - 150, 80,
+  "Shift = Dash\nEspaço = Pular (3x)\nLClick = Tiro\nRClick = Tiro Pesado",
+  {
+    fontFamily: "monospace",
+    fontSize: "14px",
+    color: "#ffffff",
+    align: "center",
+    lineSpacing: 4
+  }
+).setOrigin(0.5).setScrollFactor(0).setDepth(21);
   // mira
   reticulo = this.add.sprite(0, 0, "ret").setScale(2).setDepth(10);
 
@@ -281,6 +315,23 @@ function create() {
   // spawns iniciais (inimigos aparecem em plataformas exceto a primeira)
   spawnEnemy.call(this);
   spawnEnemy.call(this);
+  // Moeda de final
+let finalCoin = this.physics.add.sprite(3900, 260, "coin")
+  .setScale(1.3);
+finalCoin.body.allowGravity = false;
+this.physics.add.overlap(player, finalCoin, () => {
+  finalCoin.destroy();
+
+  this.add.text(player.x, player.y - 60, "VOCÊ CHEGOU AO FIM!!!", {
+    fontFamily: "monospace",
+    fontSize: "48px",
+    color: "#ffff55",
+    stroke: "#000",
+    strokeThickness: 8
+  }).setOrigin(0.5);
+
+}, null, this);
+
 }
 
 function update(time, delta) {
@@ -334,7 +385,7 @@ function update(time, delta) {
   if (player.body.velocity.x < 0) player.setFlipX(true);
   else if (player.body.velocity.x > 0) player.setFlipX(false);
 
-  // IA inimigos (melhorada) — perseguem mesmo de longe
+  // IA inimigos — perseguem mesmo de longe
   enemies.getChildren().forEach(e => {
     if (!e.active) return;
 
@@ -413,7 +464,7 @@ function resetPlayer(scene) {
   player.setTint(0x99ff99);
   playTone(180, 0.08, 'square', 0.12);
 
-  // remover inimigos próximos? opcional - por enquanto mantemos inimigos
+  // remover inimigos próximos
   scene.time.delayedCall(700, () => {
     player.invul = false;
     player.clearTint();
@@ -515,7 +566,7 @@ function eInit(e) {
   e.setVelocityX(e.patrolDir * e.patrolSpeed);
 }
 
-// bullet hit enemy (leve)
+// acerta o corno (leve)
 function bulletHitEnemy(b, e) {
   if (!b.active || !e.active) return;
   const dmg = b.damage || 1;
@@ -535,7 +586,7 @@ function bulletHitEnemy(b, e) {
   }
 }
 
-// heavy bullet hit
+// acerta o corno mais forte
 function heavyHitEnemy(b, e) {
   if (!b.active || !e.active) return;
   const dmg = b.damage || 3;
@@ -559,7 +610,7 @@ function heavyHitEnemy(b, e) {
 function enemyHitsPlayer(playerObj, enemyObj) {
   if (!playerObj || !enemyObj) return;
 
-  // se player estiver dashing: aplica dano no inimigo (e não no player)
+  // se player estiver dashando: aplica dano no inimigo (e não no player)
   if (playerObj.isDashing) {
     enemyObj.health = (enemyObj.health || 1) - 2;
     enemyObj.setVelocityY(-160);
@@ -600,14 +651,27 @@ function enemyHitsPlayer(playerObj, enemyObj) {
   // checa game over
   if (lives <= 0) {
     gameOver = true;
-    playerObj.scene.add.text(playerObj.x, playerObj.y - 50, "GAME OVER", {
+
+    // CAVEIRA (emoji grande)
+    playerObj.scene.add.text(playerObj.x, playerObj.y - 120, "💀", {
+      fontFamily: "monospace",
+      fontSize: "110px",
+      color: "#ffffff"
+    }).setOrigin(0.5);
+
+    // GAME OVER texto
+    playerObj.scene.add.text(playerObj.x, playerObj.y - 30, "GAME OVER", {
       fontFamily: "monospace",
       fontSize: "48px",
       color: "#ff4444",
       stroke: "#000000",
       strokeThickness: 8
     }).setOrigin(0.5);
-  }
+    playerObj.setVelocity(0, 0);
+    playerObj.body.moves = false;
+
+}
+
 }
 
 function onPlayerLanding() {
@@ -616,3 +680,31 @@ function onPlayerLanding() {
 }
 
 new Phaser.Game(config);
+
+function reachEnd(playerObj, coinObj) {
+
+  // mensagem
+  playerObj.scene.add.text(playerObj.x, playerObj.y - 50,
+    "VOCÊ CHEGOU AO FIM!!!",
+    {
+      fontFamily: "monospace",
+      fontSize: "48px",
+      color: "#ffff66",
+      stroke: "#000000",
+      strokeThickness: 8
+    }
+  ).setOrigin(0.5);
+
+  // some com a moeda
+  coinObj.destroy();
+
+  // respawn do player
+  playerObj.x = 150;
+  playerObj.y = 450;
+  playerObj.setVelocity(0, 0);
+
+  // spawnar 3 inimigos extras
+  for (let i = 0; i < 3; i++) {
+    spawnEnemy.call(playerObj.scene);
+  }
+}
