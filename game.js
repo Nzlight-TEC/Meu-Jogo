@@ -1,3 +1,5 @@
+// game.js - Parkour mode (triple jump, reset on ground touch, enemies on platforms except first)
+// Mantive dash, tiros leves/pesados, IA avançada, T-rex pixel, áudio 8-bit, invul, plataformas extras
 
 const WIDTH = 1024;
 const HEIGHT = 600;
@@ -28,6 +30,39 @@ const HEAVY_COOLDOWN = 1200;
 const FIRE_COOLDOWN = 150;
 
 let groundPlatform = null; // referência para a primeira plataforma (chão / reset)
+
+const audioCtx = (function() {
+  try { return new (window.AudioContext || window.webkitAudioContext)(); }
+  catch (e) { return null; }
+})();
+
+function playTone(freq = 440, time = 0.06, type = 'square', gain = 0.12) {
+  if (!audioCtx) return;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = type;
+  o.frequency.value = freq;
+  g.gain.value = gain;
+  o.connect(g);
+  g.connect(audioCtx.destination);
+  o.start();
+  o.stop(audioCtx.currentTime + time);
+}
+
+function playNoise(time = 0.08, vol = 0.12) {
+  if (!audioCtx) return;
+  const bufferSize = Math.floor(audioCtx.sampleRate * time);
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+  const src = audioCtx.createBufferSource();
+  src.buffer = buffer;
+  const g = audioCtx.createGain();
+  g.gain.value = vol;
+  src.connect(g);
+  g.connect(audioCtx.destination);
+  src.start();
+}
 
 const config = {
   type: Phaser.AUTO,
@@ -277,7 +312,7 @@ let textoPlaca = this.add.text(WIDTH - 150, 80,
     }
   });
 
-  // spawns iniciais (inimigos aparecem em plataformas)
+  // spawns iniciais (inimigos aparecem em plataformas exceto a primeira)
   spawnEnemy.call(this);
   spawnEnemy.call(this);
   // Moeda de final
@@ -502,17 +537,17 @@ function doDash(time) {
   });
 }
 
-// spawn de inimigos: escolhe uma plataforma aleatória exceto a primeira 
+// spawn de inimigos: escolhe uma plataforma aleatória exceto a primeira (groundPlatform)
 function spawnEnemy() {
   const list = platforms.getChildren().slice(); // cópia
   if (list.length <= 1) {
-    //spawn sem plataforma definida
+    // fallback: spawn sem plataforma definida
     const e = enemies.create(player.x + 500, 120, "enemy");
     eInit(e);
     return;
   }
 
-  // remove a primeira plataforma
+  // remove a primeira plataforma (ground)
   const valid = list.slice(1);
   const p = Phaser.Math.RND.pick(valid);
 
