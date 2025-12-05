@@ -22,6 +22,9 @@ let lastFired = 0;
 let lastHeavyFired = 0;
 let lastDash = 0;
 let finalizado = false;
+let nextPlatformX = 4000;   // onde começa a parte infinita
+let infinitePlatformGap = 300; // distância entre plataformas
+
 
 const DASH_COOLDOWN = 800;
 const DASH_SPEED = 700;
@@ -633,8 +636,7 @@ function enemyHitsPlayer(playerObj, enemyObj) {
   playerObj.invul = true;
   if (playerObj.setTint) playerObj.setTint(0xff6666);
 
-  // perde 1 vida (parkour não usa vidas para reset, mas mantive vidas caso queira modo misto)
-  lives -= 1;
+  // perde 1 vida
   hudLives.setText("LIVES: " + lives);
 
   playNoise(0.08, 0.14);
@@ -709,4 +711,24 @@ function reachEnd(playerObj, coinObj) {
   for (let i = 0; i < 3; i++) {
     spawnEnemy.call(playerObj.scene);
   }
+}
+function generateInfinitePlatforms(scene) {
+  // gerar 1 plataforma nova por vez
+  const y = Phaser.Math.Between(250, 550); // altura aleatória
+  const width = Phaser.Math.Between(2, 6); // tamanho aleatório
+
+  let pf = platforms.create(nextPlatformX, y, "tile");
+  pf.setScale(width, 1);
+  pf.refreshBody();
+  pf.body.setSize(pf.displayWidth, 20);
+
+  // avançar para a próxima plataforma
+  nextPlatformX += Phaser.Math.Between(
+    infinitePlatformGap - 80,
+    infinitePlatformGap + 80
+  );
+
+  // expandir o tamanho do mapa (infinito)
+  scene.physics.world.setBounds(0, 0, nextPlatformX + 800, 600);
+  scene.cameras.main.setBounds(0, 0, nextPlatformX + 800, 600);
 }
