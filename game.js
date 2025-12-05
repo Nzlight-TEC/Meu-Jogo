@@ -13,7 +13,7 @@ let enemies;
 let platforms;
 let particles;
 let score = 0;
-let lives = 5;
+let lives = 3;
 let hudScore, hudLives;
 let spawnTimer = 0;
 let gameOver = false;
@@ -248,7 +248,7 @@ function create() {
     color: "#fff",
   }).setScrollFactor(0);
 
-  hudLives = this.add.text(16, 50, "LIVES: 5", {
+  hudLives = this.add.text(16, 50, "LIVES: 3", {
     fontFamily: "monospace",
     fontSize: "26px",
     color: "#ffbbbb",
