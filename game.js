@@ -188,7 +188,7 @@ function create() {
     .setScrollFactor(0);
 
   // plataformas
-  platforms = this.physics.add.staticGroup();
+  platforms = this.physics.add.staticGroup({ defaultKey: null });
 
   // criar e salvar a plataforma "inicial" (ground) que causa reset
   
@@ -331,6 +331,8 @@ this.physics.add.overlap(player, finalCoin, () => {
   }).setOrigin(0.5);
 
 }, null, this);
+
+groundPlatform.setVisible(false);
 
 }
 
