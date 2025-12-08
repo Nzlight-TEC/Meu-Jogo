@@ -27,6 +27,8 @@ let infinitePlatformGap = 300; // distância entre plataformas
 let coins;           // grupo de moedas
 let maxX = 150;      // para pontuar distância (maior x alcançado)
 let gameOverGroup;   // container/grupo para textos do game over (evita duplicação)
+let runTime = 0;      // tempo total em ms
+let hudTimer = null;  // texto na tela
 
 
 const DASH_COOLDOWN = 800;
@@ -185,7 +187,12 @@ this.textures.generate("coin", {
 }
 
 function create() {
-  
+  hudTimer = this.add.text(WIDTH - 200, 16, "TIME: 0.00", {
+  fontFamily: "monospace",
+  fontSize: "26px",
+  color: "#55ff55",
+}).setScrollFactor(0);
+
   // desativa menu do clique direito (impede "Salvar imagem")
   this.input.mouse.disableContextMenu();
 
@@ -355,6 +362,11 @@ if (player.x > maxX + 100) {
   score += 10 * steps;
   maxX += 100 * steps;
   hudScore.setText("SCORE: " + score);
+  if (!gameOver) {
+    runTime += delta; // adiciona milissegundos
+    hudTimer.setText("TIME: " + (runTime / 1000).toFixed(2));
+}
+
 }
 
 }
