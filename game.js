@@ -24,6 +24,9 @@ let lastDash = 0;
 let finalizado = false;
 let nextPlatformX = 4000;   // onde começa a parte infinita
 let infinitePlatformGap = 300; // distância entre plataformas
+let coins;           // grupo de moedas
+let maxX = 150;      // para pontuar distância (maior x alcançado)
+let gameOverGroup;   // container/grupo para textos do game over (evita duplicação)
 
 
 const DASH_COOLDOWN = 800;
@@ -182,6 +185,7 @@ this.textures.generate("coin", {
 }
 
 function create() {
+  
   // desativa menu do clique direito (impede "Salvar imagem")
   this.input.mouse.disableContextMenu();
 
@@ -260,6 +264,7 @@ function create() {
   .setStrokeStyle(2, 0xffffff)
   .setScrollFactor(0)
   .setDepth(20);
+  
 
 let textoPlaca = this.add.text(WIDTH - 150, 80,
   "Shift = Dash\nEspaço = Pular (3x)\nLClick = Tiro\nRClick = Tiro Pesado",
@@ -341,6 +346,19 @@ groundPlatform.setVisible(false);
 
 function update(time, delta) {
   if (gameOver) return;
+  // MAPA INFINITO
+  if (player.x > nextPlatformX - 1200) {
+  generateInfinitePlatforms(this);
+  // pontuação por distância: a cada 100px à frente, ganha 10 pontos
+if (player.x > maxX + 100) {
+  const steps = Math.floor((player.x - maxX) / 100);
+  score += 10 * steps;
+  maxX += 100 * steps;
+  hudScore.setText("SCORE: " + score);
+}
+
+}
+
 
   // mira
   reticulo.x = this.input.activePointer.worldX;
@@ -474,6 +492,7 @@ function resetPlayer(scene) {
     player.invul = false;
     player.clearTint();
   });
+  
 }
 
 // tiro leve
@@ -614,6 +633,7 @@ function heavyHitEnemy(b, e) {
 // colisão inimigo <-> player (segura) com invulnerabilidade
 function enemyHitsPlayer(playerObj, enemyObj) {
   if (!playerObj || !enemyObj) return;
+  lives -= 1;
 
   // se player estiver dashando: aplica dano no inimigo (e não no player)
   if (playerObj.isDashing) {
@@ -652,18 +672,16 @@ function enemyHitsPlayer(playerObj, enemyObj) {
     if (playerObj.clearTint) playerObj.clearTint();
   });
 
-  // checa game over
-  if (lives <= 0) {
+if (lives <= 0 && !gameOver) {
     gameOver = true;
 
-    // CAVEIRA (emoji grande)
+    // Game Over visual
     playerObj.scene.add.text(playerObj.x, playerObj.y - 120, "💀", {
       fontFamily: "monospace",
       fontSize: "110px",
       color: "#ffffff"
     }).setOrigin(0.5);
 
-    // GAME OVER texto
     playerObj.scene.add.text(playerObj.x, playerObj.y - 30, "GAME OVER", {
       fontFamily: "monospace",
       fontSize: "48px",
@@ -671,12 +689,15 @@ function enemyHitsPlayer(playerObj, enemyObj) {
       stroke: "#000000",
       strokeThickness: 8
     }).setOrigin(0.5);
-    playerObj.setVelocity(0, 0);
-    playerObj.body.moves = false;
 
+    // reiniciar 2s depois
+    playerObj.scene.time.delayedCall(2000, () => {
+      location.reload();
+    });
 }
 
 }
+
 
 function onPlayerLanding() {
   // reset triple jump ao tocar qualquer plataforma
@@ -732,3 +753,4 @@ function generateInfinitePlatforms(scene) {
   scene.physics.world.setBounds(0, 0, nextPlatformX + 800, 600);
   scene.cameras.main.setBounds(0, 0, nextPlatformX + 800, 600);
 }
+
