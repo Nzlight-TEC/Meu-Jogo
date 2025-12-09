@@ -331,21 +331,7 @@ let textoPlaca = this.add.text(WIDTH - 150, 80,
   spawnEnemy.call(this);
   spawnEnemy.call(this);
   // Moeda de final
-let finalCoin = this.physics.add.sprite(3900, 260, "coin")
-  .setScale(1.3);
-finalCoin.body.allowGravity = false;
-this.physics.add.overlap(player, finalCoin, () => {
-  finalCoin.destroy();
 
-  this.add.text(player.x, player.y - 60, "VOCÊ CHEGOU AO FIM!!!", {
-    fontFamily: "monospace",
-    fontSize: "48px",
-    color: "#ffff55",
-    stroke: "#000",
-    strokeThickness: 8
-  }).setOrigin(0.5);
-
-}, null, this);
 
 groundPlatform.setVisible(false);
 
@@ -718,33 +704,7 @@ function onPlayerLanding() {
 
 new Phaser.Game(config);
 
-function reachEnd(playerObj, coinObj) {
 
-  // mensagem
-  playerObj.scene.add.text(playerObj.x, playerObj.y - 50,
-    "VOCÊ CHEGOU AO FIM!!!",
-    {
-      fontFamily: "monospace",
-      fontSize: "48px",
-      color: "#ffff66",
-      stroke: "#000000",
-      strokeThickness: 8
-    }
-  ).setOrigin(0.5);
-
-  // some com a moeda
-  coinObj.destroy();
-
-  // respawn do player
-  playerObj.x = 150;
-  playerObj.y = 450;
-  playerObj.setVelocity(0, 0);
-
-  // spawnar 3 inimigos extras
-  for (let i = 0; i < 3; i++) {
-    spawnEnemy.call(playerObj.scene);
-  }
-}
 function generateInfinitePlatforms(scene) {
   // gerar 1 plataforma nova por vez
   const y = Phaser.Math.Between(250, 550); // altura aleatória
@@ -754,6 +714,34 @@ function generateInfinitePlatforms(scene) {
   pf.setScale(width, 1);
   pf.refreshBody();
   pf.body.setSize(pf.displayWidth, 20);
+
+  function generateInfinitePlatforms(scene) {
+  // gerar plataforma nova
+  const y = Phaser.Math.Between(250, 550);
+  const width = Phaser.Math.Between(2, 6);
+
+  let pf = platforms.create(nextPlatformX, y, "tile");
+  pf.setScale(width, 1);
+  pf.refreshBody();
+  pf.body.setSize(pf.displayWidth, 20);
+
+  // 🔥 SPAWNAR INIMIGO NA PLATAFORMA NOVA 🔥
+  if (Phaser.Math.Between(0, 100) < 35) {  // 35% de chance
+    const e = enemies.create(pf.x, pf.y - 40, "enemy");
+    eInit(e);
+  }
+
+  // avançar para a próxima plataforma
+  nextPlatformX += Phaser.Math.Between(
+    infinitePlatformGap - 80,
+    infinitePlatformGap + 80
+  );
+
+  // expandir o tamanho do mapa (infinito)
+  scene.physics.world.setBounds(0, 0, nextPlatformX + 800, 600);
+  scene.cameras.main.setBounds(0, 0, nextPlatformX + 800, 600);
+}
+
 
   // avançar para a próxima plataforma
   nextPlatformX += Phaser.Math.Between(
